@@ -74,7 +74,7 @@ class dataSet:
         return batches
 
 if __name__ == '__main__':
-    graph_path = '../datasets/{}/graph.txt'.format("zhihu")
-    text_path = '../datasets/{}/data.txt'.format("zhihu")
+    graph_path = 'G:/git/CANE/datasets//{}/graph.txt'.format("zhihu")
+    text_path = 'G:/git/CANE/datasets//{}/data.txt'.format("zhihu")
     c = dataSet(text_path, graph_path)
     print(c.load_edges(graph_path))

@@ -1,131 +1,131 @@
-from keras.layers import *
-from keras.layers.merge import *
-from keras.layers.embeddings import *
-from keras.models import *
+# from keras.layers import *
+# from keras.layers.merge import *
+# from keras.layers.embeddings import *
+# from keras.models import *
 import tensorflow as tf
-from tensorflow.contrib.cudnn_rnn import CudnnGRU
+# from tensorflow.contrib.cudnn_rnn import CudnnGRU
 
 import config
 
-class model_keras(object):
-    def __init__(self, padding_length, dict_length):
-        self._dict_length = dict_length
-        self._padding_length = padding_length
-
-    @staticmethod
-    def shared_SeNetwork(share_layers):
-
-        def f(i):
-            temp = None
-            for j in share_layers:
-                temp = j(i)
-            return temp
-
-        return f
-
-    @staticmethod
-    def shared_TextNetwork(share_layers):
-
-        def f(i):
-            temp = None
-            for j in share_layers:
-                temp = j(i)
-            return temp
-
-        return f
-
-    @staticmethod
-    def ShareLayerForSe():
-        return [CuDNNGRU(64)]
-
-    @staticmethod
-    def ShareLayerForText():
-        return [CuDNNGRU(64)]
-
-    def SharedTextEmbedding(self, ShareLayerSe, ShareLayerText):
-        dict_length = self._dict_length
-
-        def f(i):
-            embedding = Embedding(input_dim=dict_length, output_dim=50)(i)
-            sentiment = self.shared_SeNetwork(ShareLayerSe)(embedding)
-            TextLabel = self.shared_TextNetwork(ShareLayerText)(embedding)
-            return Concatenate()([sentiment, TextLabel])
-
-        return f
-
-    def SharedNodeEmbedding(self, ShareLayerSe, ShareLayerText):
-        def f(i, j):
-            text_embedding = self.SharedTextEmbedding(ShareLayerSe, ShareLayerText)(j)
-            return Concatenate()([i, text_embedding])
-
-        return f
-
-    @staticmethod
-    def SeNetwork():
-
-        def f(i):
-            return CuDNNLSTM(64)(i)
-
-        return f
-
-    @staticmethod
-    def TextNetwork():
-
-        def f(i):
-            return CuDNNLSTM(64)(i)
-
-        return f
-
-    def TextEmbedding(self):
-        dict_length = self._dict_length
-
-        def f(i):
-            embedding = Embedding(input_dim=dict_length, output_dim=50)(i)
-            sentiment = self.SeNetwork()(embedding)
-            TextLabel = self.TextNetwork()(embedding)
-            return Concatenate()([sentiment, TextLabel])
-
-        return f
-
-    def NodeEmbedding(self):
-        def f(i, j):
-            text_embedding = self.TextEmbedding()(j)
-            return Concatenate()([i, text_embedding])
-
-        return f
-
-    def Modelv1(self):
-        time_input_a = Input(shape=(1,))
-        text_input_a = Input(shape=(self._padding_length,))
-        time_input_b = Input(shape=(1,))
-        text_input_b = Input(shape=(self._padding_length,))
-        node_embedding_a = self.NodeEmbedding()(time_input_a, text_input_a)
-        node_embedding_b = self.NodeEmbedding()(time_input_b, text_input_b)
-
-        y = [node_embedding_a, node_embedding_b]
-        return Model(inputs=[time_input_a, text_input_a, time_input_b, text_input_b], outputs=y, name='Summary')
-
-    def Modelv2(self):
-        time_input_a = Input(shape=(1,))
-        text_input_a = Input(shape=(self._padding_length,))
-        time_input_b = Input(shape=(1,))
-        text_input_b = Input(shape=(self._padding_length,))
-        SeLayer = self.ShareLayerForSe()
-        TextLayer = self.ShareLayerForText()
-        node_embedding_a = self.SharedNodeEmbedding(SeLayer, TextLayer)(time_input_a, text_input_a)
-        node_embedding_b = self.SharedNodeEmbedding(SeLayer, TextLayer)(time_input_b, text_input_b)
-
-        y = [node_embedding_a, node_embedding_b]
-        return Model(inputs=[time_input_a, text_input_a, time_input_b, text_input_b], outputs=y, name='Summary')
-
-
-    # def NodeEmbedding(self):
-    #     time_input = Input(shape=(1, ))
-    #     text_input = Input(shape=(self._padding_length,))
-    #     text_embedding = self.TextEmbedding()(text_input)
-    #     NodeEmbedding = Concatenate()([time_input, text_embedding])
-    #
-    #     return Model(inputs=[time_input, text_input], outputs=NodeEmbedding, name="NodeEmbedding")
+# class model_keras(object):
+#     def __init__(self, padding_length, dict_length):
+#         self._dict_length = dict_length
+#         self._padding_length = padding_length
+#
+#     @staticmethod
+#     def shared_SeNetwork(share_layers):
+#
+#         def f(i):
+#             temp = None
+#             for j in share_layers:
+#                 temp = j(i)
+#             return temp
+#
+#         return f
+#
+#     @staticmethod
+#     def shared_TextNetwork(share_layers):
+#
+#         def f(i):
+#             temp = None
+#             for j in share_layers:
+#                 temp = j(i)
+#             return temp
+#
+#         return f
+#
+#     @staticmethod
+#     def ShareLayerForSe():
+#         return [CuDNNGRU(64)]
+#
+#     @staticmethod
+#     def ShareLayerForText():
+#         return [CuDNNGRU(64)]
+#
+#     def SharedTextEmbedding(self, ShareLayerSe, ShareLayerText):
+#         dict_length = self._dict_length
+#
+#         def f(i):
+#             embedding = Embedding(input_dim=dict_length, output_dim=50)(i)
+#             sentiment = self.shared_SeNetwork(ShareLayerSe)(embedding)
+#             TextLabel = self.shared_TextNetwork(ShareLayerText)(embedding)
+#             return Concatenate()([sentiment, TextLabel])
+#
+#         return f
+#
+#     def SharedNodeEmbedding(self, ShareLayerSe, ShareLayerText):
+#         def f(i, j):
+#             text_embedding = self.SharedTextEmbedding(ShareLayerSe, ShareLayerText)(j)
+#             return Concatenate()([i, text_embedding])
+#
+#         return f
+#
+#     @staticmethod
+#     def SeNetwork():
+#
+#         def f(i):
+#             return CuDNNLSTM(64)(i)
+#
+#         return f
+#
+#     @staticmethod
+#     def TextNetwork():
+#
+#         def f(i):
+#             return CuDNNLSTM(64)(i)
+#
+#         return f
+#
+#     def TextEmbedding(self):
+#         dict_length = self._dict_length
+#
+#         def f(i):
+#             embedding = Embedding(input_dim=dict_length, output_dim=50)(i)
+#             sentiment = self.SeNetwork()(embedding)
+#             TextLabel = self.TextNetwork()(embedding)
+#             return Concatenate()([sentiment, TextLabel])
+#
+#         return f
+#
+#     def NodeEmbedding(self):
+#         def f(i, j):
+#             text_embedding = self.TextEmbedding()(j)
+#             return Concatenate()([i, text_embedding])
+#
+#         return f
+#
+#     def Modelv1(self):
+#         time_input_a = Input(shape=(1,))
+#         text_input_a = Input(shape=(self._padding_length,))
+#         time_input_b = Input(shape=(1,))
+#         text_input_b = Input(shape=(self._padding_length,))
+#         node_embedding_a = self.NodeEmbedding()(time_input_a, text_input_a)
+#         node_embedding_b = self.NodeEmbedding()(time_input_b, text_input_b)
+#
+#         y = [node_embedding_a, node_embedding_b]
+#         return Model(inputs=[time_input_a, text_input_a, time_input_b, text_input_b], outputs=y, name='Summary')
+#
+#     def Modelv2(self):
+#         time_input_a = Input(shape=(1,))
+#         text_input_a = Input(shape=(self._padding_length,))
+#         time_input_b = Input(shape=(1,))
+#         text_input_b = Input(shape=(self._padding_length,))
+#         SeLayer = self.ShareLayerForSe()
+#         TextLayer = self.ShareLayerForText()
+#         node_embedding_a = self.SharedNodeEmbedding(SeLayer, TextLayer)(time_input_a, text_input_a)
+#         node_embedding_b = self.SharedNodeEmbedding(SeLayer, TextLayer)(time_input_b, text_input_b)
+#
+#         y = [node_embedding_a, node_embedding_b]
+#         return Model(inputs=[time_input_a, text_input_a, time_input_b, text_input_b], outputs=y, name='Summary')
+#
+#
+#     # def NodeEmbedding(self):
+#     #     time_input = Input(shape=(1, ))
+#     #     text_input = Input(shape=(self._padding_length,))
+#     #     text_embedding = self.TextEmbedding()(text_input)
+#     #     NodeEmbedding = Concatenate()([time_input, text_embedding])
+#     #
+#     #     return Model(inputs=[time_input, text_input], outputs=NodeEmbedding, name="NodeEmbedding")
 
 
 class model_tf(object):
@@ -166,23 +166,23 @@ class model_tf(object):
     def TopicNetwork(self):
         with tf.name_scope("Topic_autoencoder") as scope:
             with tf.variable_scope("Encoder_1") as scope:
-                cell_1_1 = tf.nn.rnn_cell.GRUCell(num_units=256, reuse=False)
+                cell_1_1 = tf.nn.rnn_cell.LSTMCell(num_units=256, reuse=False)
                 h0 = cell_1_1.zero_state([config.batch_size], tf.float32)
                 en1_A, state = tf.nn.dynamic_rnn(cell=cell_1_1, inputs=self.T_A, initial_state=h0)
-                en1_A = tf.nn.relu(en1_A)
-                cell_1_2 = tf.nn.rnn_cell.GRUCell(num_units=256, reuse=True)
+                en1_A = tf.layers.batch_normalization(en1_A)
+                cell_1_2 = tf.nn.rnn_cell.LSTMCell(num_units=256, reuse=True)
                 h0 = cell_1_2.zero_state([config.batch_size], tf.float32)
                 en1_B, state = tf.nn.dynamic_rnn(cell=cell_1_2, inputs=self.T_B, initial_state=h0)
-                en1_B = tf.nn.relu(en1_B)
+                en1_B = tf.layers.batch_normalization(en1_B)
             with tf.variable_scope("Encoder_2") as scope:
-                cell_2_1 = tf.nn.rnn_cell.GRUCell(num_units=100, reuse=False)
+                cell_2_1 = tf.nn.rnn_cell.LSTMCell(num_units=100, reuse=False)
                 h0 = cell_2_1.zero_state([config.batch_size], tf.float32)
                 en2_A, state = tf.nn.dynamic_rnn(cell=cell_2_1, inputs=en1_A, initial_state=h0)
-                en2_A = tf.nn.relu(en2_A)
-                cell_2_2 = tf.nn.rnn_cell.GRUCell(num_units=100, reuse=True)
+                en2_A = tf.layers.batch_normalization(en2_A)
+                cell_2_2 = tf.nn.rnn_cell.LSTMCell(num_units=100, reuse=True)
                 h0 = cell_2_2.zero_state([config.batch_size], tf.float32)
                 en2_B, state = tf.nn.dynamic_rnn(cell=cell_2_2, inputs=en1_B, initial_state=h0)
-                en2_B = tf.nn.relu(en2_B)
+                en2_B = tf.layers.batch_normalization(en2_B)
 
             output_A_ = en2_A
             output_A = tf.transpose(output_A_, perm=[0, 2, 1])
@@ -192,23 +192,23 @@ class model_tf(object):
             output_B = tf.reduce_mean(tf.matmul(output_B, output_B_), 2)
 
             with tf.variable_scope("decoder_1") as scope:
-                cell_3_1 = tf.nn.rnn_cell.GRUCell(num_units=256, reuse=False)
+                cell_3_1 = tf.nn.rnn_cell.LSTMCell(num_units=256, reuse=False)
                 h0 = cell_3_1.zero_state([config.batch_size], tf.float32)
                 de1_A, state = tf.nn.dynamic_rnn(cell=cell_3_1, inputs=en2_A, initial_state=h0)
-                de1_A = tf.nn.relu(de1_A)
-                cell_3_2 = tf.nn.rnn_cell.GRUCell(num_units=256, reuse=True)
+                de1_A = tf.layers.batch_normalization(de1_A)
+                cell_3_2 = tf.nn.rnn_cell.LSTMCell(num_units=256, reuse=True)
                 h0 = cell_3_2.zero_state([config.batch_size], tf.float32)
                 de1_B, state = tf.nn.dynamic_rnn(cell=cell_3_2, inputs=en2_B, initial_state=h0)
-                de1_B = tf.nn.relu(de1_B)
+                de1_B = tf.layers.batch_normalization(de1_B)
             with tf.variable_scope("decoder_2") as scope:
-                cell_4_1 = tf.nn.rnn_cell.GRUCell(num_units=100, reuse=False)
+                cell_4_1 = tf.nn.rnn_cell.LSTMCell(num_units=100, reuse=False)
                 h0 = cell_4_1.zero_state([config.batch_size], tf.float32)
                 de2_A, state = tf.nn.dynamic_rnn(cell=cell_4_1, inputs=de1_A, initial_state=h0)
-                de2_A = tf.nn.relu(de2_A)
-                cell_4_2 = tf.nn.rnn_cell.GRUCell(num_units=100, reuse=True)
+                de2_A = tf.layers.batch_normalization(de2_A)
+                cell_4_2 = tf.nn.rnn_cell.LSTMCell(num_units=100, reuse=True)
                 h0 = cell_4_2.zero_state([config.batch_size], tf.float32)
                 de2_B, state = tf.nn.dynamic_rnn(cell=cell_4_2, inputs=de1_B, initial_state=h0)
-                de2_B = tf.nn.relu(de2_B)
+                de2_B = tf.layers.batch_normalization(de2_B)
 
             return output_A, output_B, de2_A, de2_B
 
@@ -222,7 +222,6 @@ class model_tf(object):
         p3 = tf.log(tf.sigmoid(tf.reduce_sum(self.N_A*self.gruB, 1)) + 0.001)
 
         p4 = tf.log(tf.sigmoid(tf.reduce_sum(self.N_B*self.gruA, 1)) + 0.001)
-
         # p5 = -tf.reduce_mean(self.T_A * tf.log(self.resA) + 0.001)
         #
         # p6 = -tf.reduce_mean(self.T_B * tf.log(self.resB) + 0.001)
@@ -231,7 +230,7 @@ class model_tf(object):
         # tf.summary.scalar(name="Content B Node A Loss", tensor=p3)
         # tf.summary.scalar(name="Content A Node B Loss", tensor=p4)
 
-        loss = -tf.reduce_sum(0.9*p1 + 0.9*p2 + p3 + p4)
+        loss = -tf.reduce_sum(0.5 * p1 + 4 * p2 + 0.5 * p3 + 0.5*p4)
         return loss
 
 
