@@ -1,5 +1,5 @@
 import os
-
+import progressbar
 data_path = './data/'
 save_path = 'D:/data/'
 
@@ -11,6 +11,10 @@ retweet = []
 reply_to_user = []
 reply_to_tweet_id = []
 contents = []
+
+sum_count = 19497551+2466278+5735908+80198653+22963934+8942640
+
+bar = progressbar.ProgressBar(max_value=139804964)
 
 
 def _write_to_file(dir_path, data):
@@ -37,9 +41,9 @@ def _write_to_file(dir_path, data):
 def collect(path):
     datas = parser_data(path)
     c = 0
-    for data in datas:
+    for data in bar(datas):
         c += 1
-        print(c)
+        # print(c)
         # name.append(data[0])
         # tweet_id.append(data[1])
         # time.append(data[2])
@@ -47,7 +51,6 @@ def collect(path):
         # reply_to_user.append(data[4].split("\t")[0] + "\n")
         # contents.append(data[5])
         _write_to_file(save_path, data)
-
 
 
 def parser_data(path):
