@@ -56,7 +56,6 @@ class dataSet:
         return sample_edges
 
     def generate_batches(self, mode=None):
-
         num_batch = len(self.edges) / config.batch_size
         edges = self.edges
         if mode == 'add':
