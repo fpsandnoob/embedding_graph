@@ -8,6 +8,9 @@ import random
 
 class dataset:
     def __init__(self, dir_path):
+        self.num_nodes = 2658058
+        self.num_vocab = 8177600
+
         self.nodes = os.path.join(dir_path, "vector.txt")
         self.times = os.path.join(dir_path, "time_.txt")
         self.polarities = os.path.join(dir_path, "polarity.txt")
@@ -19,53 +22,57 @@ class dataset:
         self.time = self.load_time()
 
     def load_edges(self):
-        with open(self.nodes, encoding='utf-8') as f:
-            while 1:
-                graph_file = f.readline()
-                if graph_file == "\n":
-                    break
-                edges = list(map(int, graph_file.strip().replace("\n", "").split('\t')))
-                yield edges
+        while 1:
+            with open(self.nodes, encoding='utf-8') as f:
+                while 1:
+                    graph_file = f.readline()
+                    if graph_file == "":
+                        break
+                    edges = list(map(int, graph_file.strip().replace("\n", "").split('\t')))
+                    yield edges
 
     def load_contents(self):
-        with open(self.contents, encoding='utf-8') as f:
-            count = 1
-            while 1:
-                if count == 39787305:
-                    break
-                data = f.readline()
-                temp_contents = data.replace('\n', '')
-                if temp_contents == '':
-                    contents = ''
-                else:
-                    contents = list(map(int, temp_contents.strip().split(" ")))
-                word_ids = np.zeros(config.MAX_LEN, np.int64)
-                for idx, tokens in enumerate(contents):
-                    if idx >= config.MAX_LEN:
+        while 1:
+            with open(self.contents, encoding='utf-8') as f:
+                count = 1
+                while 1:
+                    if count == 39787305:
                         break
-                    word_ids[idx] = tokens
-                count += 1
-                yield word_ids
+                    data = f.readline()
+                    temp_contents = data.replace('\n', '')
+                    if temp_contents == '':
+                        contents = ''
+                    else:
+                        contents = list(map(int, temp_contents.strip().split(" ")))
+                    word_ids = np.zeros(config.MAX_LEN, np.int64)
+                    for idx, tokens in enumerate(contents):
+                        if idx >= config.MAX_LEN:
+                            break
+                        word_ids[idx] = tokens
+                    count += 1
+                    yield word_ids
 
     def load_polarity(self):
-        with open(self.polarities, encoding='utf-8') as f:
-            while 1:
-                data = f.readline()
-                temp_contents = data.replace('\n', '')
-                if temp_contents == "":
-                    break
-                contents = list(map(float, temp_contents.split(" ")))
-                yield contents
+        while 1:
+            with open(self.polarities, encoding='utf-8') as f:
+                while 1:
+                    data = f.readline()
+                    temp_contents = data
+                    if temp_contents == "":
+                        break
+                    contents = list(map(float, temp_contents.strip().replace("\n", "").split(' ')))
+                    yield contents
 
     def load_time(self):
-        with open(self.times, encoding='utf-8') as f:
-            while 1:
-                data = f.readline()
-                temp_contents = data.replace('\n', '')
-                if temp_contents == "":
-                    break
-                contents = list(map(float, temp_contents.split(" ")))
-                yield contents
+        while 1:
+            with open(self.times, encoding='utf-8') as f:
+                while 1:
+                    data = f.readline()
+                    temp_contents = data
+                    if temp_contents == "":
+                        break
+                    contents = list(map(float, temp_contents.strip().replace("\n", "").split(' ')))
+                    yield contents
 
     # def negative_sample(self, edges):
     #     node1, node2 = zip(*edges)
@@ -109,10 +116,13 @@ class dataset:
                 contents.append(next(self.content))
                 time.append(next(self.time))
                 polarity.append(next(self.polarity))
-            yield node_a, node_b, contents, time, polarity
-
+            yield np.array(node_a), np.array(node_b), np.array(contents), np.array(time, dtype=np.float64), np.array(polarity)
 
 if __name__ == '__main__':
     path = r'D:\data\new_data'
     c = dataset(path)
-    print(len(next(c.generate_batches())[1]))
+    try:
+        for c, i in enumerate(c.load_edges()):
+            pass
+    except ValueError:
+        print(c)

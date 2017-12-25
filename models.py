@@ -132,18 +132,18 @@ class model_tf(object):
     def __init__(self, vocab_size, num_nodes):
         with tf.name_scope('read_inputs') as scope:
             self.Text_a = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_a')
-            # self.Text_b = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_b')
+            self.Text_b = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_b')
             self.Node_a = tf.placeholder(tf.int32, [config.batch_size], name='node_1')
             self.Node_b = tf.placeholder(tf.int32, [config.batch_size], name='node_2')
-            self.Time_a = tf.placeholder(tf.int32, [config.batch_size], name='time_1')
+            # self.Time_a = tf.placeholder(tf.int32, [config.batch_size], name='time_1')
             # self.Time_b = tf.placeholder(tf.int32, [config.batch_size], name='time_2')
             self.Polarity_a = tf.placeholder(tf.int32, [config.batch_size, 2], name='polarity_a')
-            # self.Polarity_b = tf.placeholder(tf.int32, [config.batch_size], name='polarity_b')
+            self.Polarity_b = tf.placeholder(tf.int32, [config.batch_size, 2], name='polarity_b')
 
         with tf.name_scope('initialize_embeddings') as scope:
             self.text_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
             self.node_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
-            self.time_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
+            # self.time_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
             self.polarity_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
             self.node_embed = tf.clip_by_norm(self.node_embed, clip_norm=1, axes=1)
 
@@ -151,14 +151,15 @@ class model_tf(object):
             self.T_A = tf.nn.embedding_lookup(self.text_embed, self.Text_a)
             # self.T_A = tf.expand_dims(self.TA, -1)
 
-            # self.T_B = tf.nn.embedding_lookup(self.text_embed, self.Text_b)
+            self.T_B = tf.nn.embedding_lookup(self.text_embed, self.Text_b)
             # self.T_B = tf.expand_dims(self.TB, -1)
 
             self.N_A = tf.nn.embedding_lookup(self.node_embed, self.Node_a)
             self.N_B = tf.nn.embedding_lookup(self.node_embed, self.Node_b)
 
-            self.Time_A = tf.nn.embedding_lookup(self.time_embed, self.Time_a)
+            # self.Time_A = tf.nn.embedding_lookup(self.time_embed, self.Time_a)
             self.Polarity_A = tf.nn.embedding_lookup(self.polarity_embed, self.Polarity_a)
+            self.Polarity_B = tf.nn.embedding_lookup(self.polarity_embed, self.Polarity_b)
 
         self.gruA, self.gruB, self.resA, self.resB = self.TopicNetwork()
         self.loss = self.compute_loss()

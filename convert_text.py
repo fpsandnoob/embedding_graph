@@ -30,7 +30,6 @@ def openfile(path):
                 break
             yield data
 
-
 def openfilec(path):
     with open(path) as f:
         count = 0
@@ -220,7 +219,7 @@ def process(src_path, dst_path):
     #             id_ = user_map[name.replace('\n', '')]
     #             dst.write(id_ + '\n')
     #             count += 1
-
+        max_data = 0
         with open(os.path.join(src_path, "retweet.txt"), encoding='utf-8') as src_1:
             with open(os.path.join(src_path, "reply_to_user_file.txt"), encoding='utf-8') as src_2:
                 with open(os.path.join(dst_path, "node.txt"), encoding='utf-8', mode='w') as dst:
@@ -230,14 +229,20 @@ def process(src_path, dst_path):
                         if name_1 == '':
                             break
                         if name_1.replace('\n', '') != '-1':
-                            dst.write(user_map[name_1.replace('\n', '')] + '\n')
+                            a = user_map[name_1.replace('\n', '')]
+                            if int(a) > max_data:
+                                max_data = int(a)
+                            # dst.write(a + '\n')
                             continue
                         elif name_2.replace('\n', '') != '-1':
-                            dst.write(user_map[name_2.replace('\n', '')] + '\n')
+                            a = user_map[name_1.replace('\n', '')]
+                            if int(a) > max_data:
+                                max_data = int(a)
+                            # dst.write(a + '\n')
                             continue
                         else:
                             raise ValueError
-
+        print("Max node:" + str(max_data))
 
 def generate_Edge(dst_path):
     count = 0
@@ -268,7 +273,7 @@ def parser_data(dst_path):
 
 
 if __name__ == '__main__':
-    # load_map()
-    # process(src_data_path, dst_data_path)
+    load_map()
+    process(src_data_path, dst_data_path)
     # generate_Edge(dst_data_path)
-    parser_data(dst_data_path)
+    # parser_data(dst_data_path)

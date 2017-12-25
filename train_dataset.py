@@ -33,47 +33,50 @@ def _input_fn(path, perform_shuffle=False, repeat_count=1):
 class model_tf(object):
     def __init__(self, vocab_size: int, num_nodes: int):
         with tf.name_scope('read_inputs') as scope:
-            self.path = tf.placeholder(tf.string, name="path")
-            (self.Node_a, self.Node_b, self.content, self.time, self.sentiment) = _input_fn(self.path)
-            # self.Text_a = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_a')
-            # self.Text_b = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_b')
-            # self.Node_a = tf.placeholder(tf.int32, [config.batch_size], name='node_1')
-            # self.Node_b = tf.placeholder(tf.int32, [config.batch_size], name='node_2')
-            # self.Time_a = tf.placeholder(tf.int32, [config.batch_size], name='time_1')
-            # self.Time_b = tf.placeholder(tf.int32, [config.batch_size], name='time_2')
-            # self.Polarity_a = tf.placeholder(tf.int32, [config.batch_size], name='polarity_a')
-            # self.Polarity_b = tf.placeholder(tf.int32, [config.batch_size], name='polarity_b')
+            self.Text_a = tf.placeholder(tf.int32, [config.batch_size, config.MAX_LEN], name='Text_a')
+            self.Node_a = tf.placeholder(tf.int32, [config.batch_size], name='node_1')
+            self.Node_b = tf.placeholder(tf.int32, [config.batch_size], name='node_2')
+            self.Time_a = tf.placeholder(tf.int32, [config.batch_size, 1], name='time_1')
+            self.Polarity_a = tf.placeholder(tf.int32, [config.batch_size, 2], name='polarity_a')
 
         with tf.name_scope('initialize_embeddings') as scope:
-            self.text_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
-            self.node_embed = tf.Variable(tf.truncated_normal([vocab_size, int(config.embed_size / 4)], stddev=0.3))
-            self.time_embed = tf.Variable(tf.truncated_normal([1, int(config.embed_size / 4)], stddev=0.3))
-            self.polarity_embed = tf.Variable(tf.truncated_normal([2, int(config.embed_size / 4)], stddev=0.3))
+            self.text_embed = tf.Variable(tf.truncated_normal([vocab_size, 10], stddev=0.3))
+            self.node_embed = tf.Variable(tf.truncated_normal([num_nodes, 16], stddev=0.3))
+            self.time_embed = tf.Variable(tf.truncated_normal([1, 10], stddev=0.3))
+            self.polarity_embed = tf.Variable(tf.truncated_normal([2, 5], stddev=0.3))
             self.node_embed = tf.clip_by_norm(self.node_embed, clip_norm=1, axes=1)
 
         with tf.name_scope('lookup_embeddings') as scope:
-            self.Text = tf.nn.embedding_lookup(self.text_embed, self.content)
-            # self.T_A = tf.expand_dims(self.TA, -1)
-
-            # self.T_B = tf.nn.embedding_lookup(self.text_embed, self.Text_b)
-            # self.T_B = tf.expand_dims(self.TB, -1)
-
+            self.Text = tf.nn.embedding_lookup(self.text_embed, self.Text_a)
             self.N_A = tf.nn.embedding_lookup(self.node_embed, self.Node_a)
             self.N_B = tf.nn.embedding_lookup(self.node_embed, self.Node_b)
+            self.Time = tf.nn.embedding_lookup(self.time_embed, self.Time_a)
+            self.Sentiment = tf.nn.embedding_lookup(self.polarity_embed, self.Polarity_a)
+            # print(self.node_embed)
 
-            self.Time = tf.nn.embedding_lookup(self.time_embed, self.time)
-            self.Sentiment = tf.nn.embedding_lookup(self.polarity_embed, self.sentiment)
-
-            # self.Time_A = tf.nn.embedding_lookup(self.time_embed, self.Time_a)
-            # self.Time_B = tf.nn.embedding_lookup(self.time_embed, self.Time_b)
 
         # self.gruA, self.resA, = self.TopicNetwork()
         # self.loss = self.compute_loss()
-        (self.contents_encoder_op, self.contents_decoder_op,
-         self.time_encoder_op, self.time_decoder_op,
-         self.polarity_encoder_op, self.polarity_decoder_op) = self.TopicAutoencoder()
-        self.loss = self.compute_loss_autoencoder()
+        with tf.name_scope('tensor_process') as scope:
+            self.Text = tf.layers.flatten(self.Text)
+            self.Sentiment = tf.layers.flatten(self.Sentiment)
+            self.Time = tf.layers.flatten(self.Time)
+            # self.Sentiment = tf.squeeze(self.Sentiment, -1)
+            # print(self.Text)
+            # print(self.N_A)
+            # print(self.N_B)
+            # print(self.Sentiment)
+            self.merge_tensor = tf.concat([self.Text, self.Time, self.Sentiment], axis=1)
+            print(self.merge_tensor)
 
+        # (self.contents_encoder_op, self.contents_decoder_op,
+        #  self.time_encoder_op, self.time_decoder_op,
+        #  self.polarity_encoder_op, self.polarity_decoder_op) = self.TopicAutoencoder()
+        #self.loss = self.compute_loss_autoencoder()
+
+        (self.encoder_op, self.decoder_op) = self.TopicAutoencoder()
+
+        self.loss = self.compute_loss_merge()
 
     def TopicNetwork(self):
         with tf.name_scope("Topic_autoencoder") as scope:
@@ -125,10 +128,10 @@ class model_tf(object):
             return output_A, de2_A
 
     def TopicAutoencoder(self) -> (tf.Tensor, tf.Tensor):
-        n_input = None
-        n_hidden_1 = 512
-        n_hidden_2 = 256
-        n_hidden_3 = 100
+        n_input = 220
+        n_hidden_1 = 128
+        n_hidden_2 = 64
+        n_hidden_3 = 16
         with tf.name_scope("init_weights") as scope:
             weights = {
                 'encoder_w1': tf.Variable(tf.truncated_normal([n_input, n_hidden_1], stddev=0.3)),
@@ -142,9 +145,9 @@ class model_tf(object):
                 'encoder_b1': tf.Variable(tf.truncated_normal([n_hidden_1], stddev=0.3)),
                 'encoder_b2': tf.Variable(tf.truncated_normal([n_hidden_2], stddev=0.3)),
                 'encoder_b3': tf.Variable(tf.truncated_normal([n_hidden_3], stddev=0.3)),
-                'decoder_b1': tf.Variable(tf.truncated_normal([n_hidden_3], stddev=0.3)),
-                'decoder_b2': tf.Variable(tf.truncated_normal([n_hidden_2], stddev=0.3)),
-                'decoder_b3': tf.Variable(tf.truncated_normal([n_hidden_1], stddev=0.3))
+                'decoder_b1': tf.Variable(tf.truncated_normal([n_hidden_2], stddev=0.3)),
+                'decoder_b2': tf.Variable(tf.truncated_normal([n_hidden_1], stddev=0.3)),
+                'decoder_b3': tf.Variable(tf.truncated_normal([n_input], stddev=0.3))
             }
 
         def encoder(x: tf.Tensor) -> tf.Tensor:
@@ -160,22 +163,27 @@ class model_tf(object):
                 layer_2 = tf.nn.relu6(tf.nn.xw_plus_b(layer_1, weights['decoder_w2'], biases['decoder_b2']))
                 layer_3 = tf.nn.relu6(tf.nn.xw_plus_b(layer_2, weights['decoder_w3'], biases['decoder_b3']))
                 return layer_3
+        #
+        # # Contents
+        # contents_encoder_op = encoder(self.Text)
+        # contents_decoder_op = decoder(contents_encoder_op)
+        #
+        # # Time
+        # time_encoder_op = encoder(self.Time)
+        # time_decoder_op = decoder(time_encoder_op)
+        #
+        # # Polarity
+        # polarity_encoder_op = encoder(self.Sentiment)
+        # polarity_decoder_op = decoder(polarity_encoder_op)
 
-        # Contents
-        contents_encoder_op = encoder(self.Text)
-        contents_decoder_op = decoder(contents_encoder_op)
+        # return (contents_encoder_op, contents_decoder_op,
+        #         time_encoder_op, time_decoder_op,
+        #         polarity_encoder_op, polarity_decoder_op)
 
-        # Time
-        time_encoder_op = encoder(self.Time)
-        time_decoder_op = decoder(time_encoder_op)
+        encoder_op = encoder(self.merge_tensor)
+        decoder_op = decoder(encoder_op)
 
-        # Polarity
-        polarity_encoder_op = encoder(self.Sentiment)
-        polarity_decoder_op = decoder(polarity_encoder_op)
-
-        return (contents_encoder_op, contents_decoder_op,
-                time_encoder_op, time_decoder_op,
-                polarity_encoder_op, polarity_decoder_op)
+        return encoder_op, decoder_op
 
     def compute_loss(self):
         p1 = tf.reduce_sum(self.gruA * self.gruB, 1)
@@ -220,3 +228,17 @@ class model_tf(object):
         loss = -tf.reduce_sum(node_loss + contents_loss + time_loss) + loss_all_rec
 
         return loss
+
+    def compute_loss_merge(self) -> tf.Tensor:
+        loss_rec = tf.reduce_mean(tf.pow(self.merge_tensor - self.decoder_op, 2))
+
+        node_loss = tf.log(tf.sigmoid(tf.reduce_sum(self.N_A * self.N_B)) + 0.001)
+
+        embedding_loss = tf.log(tf.sigmoid(tf.reduce_sum(self.N_B * self.encoder_op)) + 0.001)
+
+        loss = -tf.reduce_sum(node_loss + embedding_loss) + loss_rec
+
+        return loss
+
+if __name__ == '__main__':
+    c = model_tf(20, 2412)
