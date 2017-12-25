@@ -1,6 +1,8 @@
 import os
 from textblob.sentiments import NaiveBayesAnalyzer
+import numpy as np
 import csv
+from datetime import datetime
 # from smart_open import smart_open
 # import numpy as np
 # import gensim
@@ -236,15 +238,37 @@ def process(src_path, dst_path):
                         else:
                             raise ValueError
 
+
 def generate_Edge(dst_path):
-    vector_length = len(user_map)
-    with open(os.path.join(dst_path, "node.txt"), encoding='utf-8') as nodeb:
-        with open(os.path.join(dst_path, "name.txt"), encoding='utf-8') as nodea:
-            with open(os.path.join(dst_path, 'vector.txt'), encoding='utf-8') as dst:
+    count = 0
+    with open(os.path.join(dst_path, "node.txt"), encoding='utf-8') as node_B:
+        with open(os.path.join(dst_path, "name.txt"), encoding='utf-8') as node_A:
+            with open(os.path.join(dst_path, 'vector.txt'), mode='w') as dst:
+                while 1:
+                    print(count)
+                    node_a = node_A.readline()
+                    node_b = node_B.readline()
+                    if node_a.replace('\n', '') == '':
+                        break
+                    dst.write("{}\t{}\n".format(node_a.replace('\n', ''), node_b.replace('\n', '')))
+                    count += 1
 
-
+def parser_data(dst_path):
+    with open(os.path.join(dst_path, "time.txt"), encoding='utf-8') as src:
+        with open(os.path.join(dst_path, "time_.txt"), "w", encoding='utf-8') as dst:
+            while 1:
+                src_str = src.readline().replace('\n', '')
+                if src_str == '':
+                    break
+                try:
+                    dt = datetime.strptime(src_str, "%a %b %d %X %z %Y")
+                except ValueError:
+                    dt = datetime.strptime(src_str, "%a %b %d %X %Z %Y")
+                dst.write(str(dt.timestamp()) + '\n')
 
 
 if __name__ == '__main__':
-    load_map()
-    process(src_data_path, dst_data_path)
+    # load_map()
+    # process(src_data_path, dst_data_path)
+    # generate_Edge(dst_data_path)
+    parser_data(dst_data_path)

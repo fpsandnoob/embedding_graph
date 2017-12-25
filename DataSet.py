@@ -78,3 +78,4 @@ if __name__ == '__main__':
     text_path = 'G:/git/CANE/datasets//{}/data.txt'.format("zhihu")
     c = dataSet(text_path, graph_path)
     print(c.load_edges(graph_path))
+
